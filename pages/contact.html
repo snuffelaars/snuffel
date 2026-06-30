@@ -12,6 +12,7 @@
       <a href="kalender.html">Kalender</a>
       <a href="bordspellenkast.html">Bordspellenkast</a>
       <a href="over.html">Over</a>
+      <a href="tafel-reserveren.html">Tafel reserveren</a>
       <a href="contact.html">Contact</a>
     </nav>
 
@@ -35,57 +36,12 @@
       </section>
 
       <section>
-        <h2 class="section-heading">Nieuw evenement aanmaken</h2>
-        <div class="card">
-          <p>Maak hier een nieuwe spelavond aan. Zoek eerst het bordspel op in BGG, vul datum en tijd in, en laat anderen zich inschrijven.</p>
-
-          <form id="event-form" class="event-form">
-            <label>
-              Bordspelnaam
-              <input id="bgg-search" type="text" placeholder="Bijvoorbeeld Catan" />
-              <button id="lookup-bgg" type="button" class="button small">Zoek in BGG</button>
-            </label>
-
-            <div id="bgg-results" class="bgg-results"></div>
-
-            <label>
-              Bordspelnaam
-              <input id="boardgame-name" name="boardgame-name" type="text" required />
-            </label>
-
-            <label>
-              Datum
-              <input name="date" type="date" required />
-            </label>
-
-            <label>
-              Tijd
-              <input name="time" type="time" value="19:30" required />
-            </label>
-
-            <label>
-              Maximaal aantal spelers
-              <input id="max-players" name="max-players" type="number" min="1" required />
-            </label>
-
-            <input id="bgg-id" name="bgg-id" type="hidden" />
-            <input id="thumbnail-url" name="thumbnail-url" type="hidden" />
-
-            <label>
-              Extra beschrijving
-              <textarea id="description" name="description" rows="3" placeholder="Bijvoorbeeld thema, level of bijzonderheden"></textarea>
-            </label>
-
-            <button type="submit" class="button">Evenement aanmaken</button>
-          </form>
-
-          <p id="form-status" class="form-status" aria-live="polite"></p>
-        </div>
+        <h2 class="section-heading">Beschikbare spelavonden</h2>
+        <div id="events-list" class="events-list"></div>
       </section>
 
       <section>
-        <h2 class="section-heading">Beschikbare spelavonden</h2>
-        <div id="events-list" class="events-list"></div>
+        <a class="button" href="tafel-reserveren.html">Nieuwe tafel reserveren</a>
       </section>
 
       <section>
