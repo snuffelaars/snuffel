@@ -74,7 +74,7 @@ class EventBoardGameManager {
   }
 
   async loadFromSupabase() {
-    const response = await fetch(`${this.supabaseConfig.url}/rest/v1/events?select=*`, {
+    const response = await fetch(`${this.supabaseConfig.url}/rest/v1/boardgame_tables?select=*,signups(*)`, {
       headers: {
         apikey: this.supabaseConfig.anonKey,
         Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
@@ -86,18 +86,86 @@ class EventBoardGameManager {
     }
 
     const data = await response.json();
-    return Array.isArray(data) ? data.map((item) => ({ ...item, signups: item.signups || [] })) : [];
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    if (data.length > 0 && !('signups' in data[0])) {
+      const signups = await this.loadSignupsFromSupabase();
+      return this.mergeEventsWithSignups(data, signups);
+    }
+
+    return data.map((item) => this.mapSupabaseRowToEvent(item));
+  }
+
+  async loadSignupsFromSupabase() {
+    const response = await fetch(`${this.supabaseConfig.url}/rest/v1/signups?select=*`, {
+      headers: {
+        apikey: this.supabaseConfig.anonKey,
+        Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase signups HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  mergeEventsWithSignups(events, signups) {
+    return events.map((event) => {
+      const eventSignups = signups.filter((signup) => {
+        return (
+          signup.table_id === event.id ||
+          signup.event_id === event.id ||
+          signup.boardgame_table_id === event.id
+        );
+      });
+
+      return this.mapSupabaseRowToEvent({ ...event, signups: eventSignups });
+    });
+  }
+
+  mapSupabaseRowToEvent(row) {
+    return {
+      id: row.id,
+      title: row.boardgame_name || row.title || '',
+      boardgameName: row.boardgame_name || row.title || '',
+      date: row.date,
+      time: row.time,
+      maxPlayers: Number(row.max_players || row.maxPlayers || 0),
+      bggId: row.bgg_id || row.bggId || '',
+      thumbnail: row.thumbnail_url || row.thumbnail || '',
+      description: row.description || '',
+      signups: Array.isArray(row.signups) ? row.signups : [],
+      createdAt: row.created_at || row.createdAt,
+    };
+  }
+
+  mapEventToSupabaseRow(event) {
+    return {
+      boardgame_name: event.boardgameName || event.title,
+      date: event.date,
+      time: event.time,
+      max_players: event.maxPlayers,
+      bgg_id: event.bggId,
+      thumbnail_url: event.thumbnail,
+      description: event.description,
+      created_at: event.createdAt,
+    };
   }
 
   async persistToSupabase(event) {
-    const response = await fetch(`${this.supabaseConfig.url}/rest/v1/events`, {
+    const response = await fetch(`${this.supabaseConfig.url}/rest/v1/boardgame_tables`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         apikey: this.supabaseConfig.anonKey,
         Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
       },
-      body: JSON.stringify(event),
+      body: JSON.stringify(this.mapEventToSupabaseRow(event)),
     });
 
     if (!response.ok) {
@@ -107,20 +175,38 @@ class EventBoardGameManager {
     return response.json();
   }
 
-  async updateSupabaseEvent(event) {
-    const response = await fetch(`${this.supabaseConfig.url}/rest/v1/events?id=eq.${event.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: this.supabaseConfig.anonKey,
-        Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
-      },
-      body: JSON.stringify(event),
-    });
+  async persistSignupToSupabase(signup) {
+    const payloadCandidates = [
+      { boardgame_table_id: signup.tableId, name: signup.name, joined_at: signup.joinedAt },
+      { event_id: signup.tableId, name: signup.name, joined_at: signup.joinedAt },
+      { table_id: signup.tableId, name: signup.name, joined_at: signup.joinedAt },
+    ];
 
-    if (!response.ok) {
-      throw new Error(`Supabase PATCH HTTP ${response.status}`);
+    let lastError = null;
+
+    for (const payload of payloadCandidates) {
+      try {
+        const response = await fetch(`${this.supabaseConfig.url}/rest/v1/signups`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: this.supabaseConfig.anonKey,
+            Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          return response.json();
+        }
+
+        lastError = new Error(`Supabase signup POST HTTP ${response.status}`);
+      } catch (error) {
+        lastError = error;
+      }
     }
+
+    throw lastError || new Error('Kon inschrijving niet naar Supabase sturen.');
   }
 
   setStatus(message, isError = false) {
@@ -216,13 +302,18 @@ class EventBoardGameManager {
 
     try {
       if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey) {
-        await this.updateSupabaseEvent(targetEvent);
+        await this.persistSignupToSupabase({
+          tableId: eventId,
+          name,
+          joinedAt: new Date().toISOString(),
+        });
+        await this.loadEvents();
       } else {
         this.saveToLocalStorage(this.events);
+        this.renderEvents();
       }
 
       this.setStatus('Je bent ingeschreven. De teller en deelnemerslijst zijn bijgewerkt.');
-      this.renderEvents();
     } catch (error) {
       console.error('Kon inschrijving niet opslaan:', error);
       this.setStatus('Er ging iets mis bij het verwerken van je inschrijving.', true);
