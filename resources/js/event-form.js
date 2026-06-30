@@ -15,6 +15,7 @@ class EventBoardGameManager {
     this.descriptionInput = document.getElementById('description');
     this.events = [];
     this.bindEvents();
+    this.addVisibilityHandlers();
     this.loadEvents();
   }
 
@@ -79,6 +80,7 @@ class EventBoardGameManager {
         apikey: this.supabaseConfig.anonKey,
         Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
       },
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -104,6 +106,7 @@ class EventBoardGameManager {
         apikey: this.supabaseConfig.anonKey,
         Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
       },
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -164,6 +167,7 @@ class EventBoardGameManager {
         'Content-Type': 'application/json',
         apikey: this.supabaseConfig.anonKey,
         Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
+        Prefer: 'return=representation',
       },
       body: JSON.stringify(this.mapEventToSupabaseRow(event)),
     });
@@ -172,7 +176,8 @@ class EventBoardGameManager {
       throw new Error(`Supabase POST HTTP ${response.status}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    return Array.isArray(data) ? data[0] : data;
   }
 
   async persistSignupToSupabase(signup) {
@@ -250,14 +255,19 @@ class EventBoardGameManager {
       createdAt: new Date().toISOString(),
     };
 
+    this.setStatus('Evenement wordt opgeslagen...');
+
     try {
       if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey) {
-        await this.persistToSupabase(newEvent);
+        const savedEvent = await this.persistToSupabase(newEvent);
+        const mappedEvent = this.mapSupabaseRowToEvent({ ...savedEvent, signups: savedEvent.signups || [] });
+        this.events = [mappedEvent, ...this.events];
       } else {
         this.events = [newEvent, ...this.events];
         this.saveToLocalStorage(this.events);
       }
 
+      this.renderEvents();
       this.form.reset();
       if (this.bggResults) {
         this.bggResults.innerHTML = '';
@@ -294,23 +304,24 @@ class EventBoardGameManager {
     }
 
     targetEvent.signups = targetEvent.signups || [];
-    targetEvent.signups.push({
+    const signupRecord = {
       id: this.generateId(),
       name,
       joinedAt: new Date().toISOString(),
-    });
+    };
+    targetEvent.signups.push(signupRecord);
+    this.renderEvents();
 
     try {
       if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey) {
         await this.persistSignupToSupabase({
           tableId: eventId,
           name,
-          joinedAt: new Date().toISOString(),
+          joinedAt: signupRecord.joinedAt,
         });
         await this.loadEvents();
       } else {
         this.saveToLocalStorage(this.events);
-        this.renderEvents();
       }
 
       this.setStatus('Je bent ingeschreven. De teller en deelnemerslijst zijn bijgewerkt.');
