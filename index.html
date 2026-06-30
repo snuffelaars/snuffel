@@ -9,14 +9,14 @@
   <body>
     <nav>
       <a href="index.html">Home</a>
-      <a href="pages/agenda.html">Agenda</a>
+      <a href="pages/kalender.html">Kalender</a>
       <a href="pages/bordspellenkast.html">Bordspellenkast</a>
       <a href="pages/over.html">Over</a>
       <a href="pages/contact.html">Contact</a>
     </nav>
 
     <header>
-      <img src="resources/images/main-page-banner.jpg" alt="Banner van De Snuffelaars" />
+      <img src="resources/images/main-page-banner.png" alt="Banner van De Snuffelaars" />
       <div class="hero">
         <div>
           <h1>De Snuffelaars</h1>
@@ -27,15 +27,31 @@
 
     <main>
       <section class="summary">
-        <h2>Samenvatting</h2>
-        <p>De Snuffelaars is een bordspelclub voor iedereen die van spellen houdt. Deze homepage geeft een overzicht van onze agenda, spellenkast, clubinformatie en contactgegevens.</p>
+        <h2>Welkom bij De Snuffelaars</h2>
+        <p>Wij zijn een bordspelclub voor iedereen die van spellen houdt. Op deze pagina vind je een overzicht van onze kalender, spellenkast, clubinformatie en contactgegevens. Doe mee en ontdek de wereld van bordspellen met ons!</p>
+      </section>
+
+      <section class="feature-row">
+        <div class="feature-main">
+          <h2 class="section-heading">Ons concept</h2>
+          <div class="card">
+            <p>De Snuffelaars is een toegankelijke plek voor iedereen die van bordspellen houdt, met ruimte voor zowel beginners als ervaren spelers. Onze club is gratis en open voor iedereen.</p>
+            <p>Omdat niet iedereen tegelijk arriveert, beginnen we eerst met een kort spel zodat laatkomers nog kunnen aansluiten. Rond 20:30 delen we ons in groepen op om voor diegenen die willen ook grotere spellen te kunnen spelen, dus kom op tijd als je mee wilt doen.</p>
+          </div>
+        </div>
+
+        <aside class="feature-event card" aria-labelledby="next-event-heading">
+          <h2 id="next-event-heading">Volgende spelavond</h2>
+          <div id="home-next-event"></div>
+          <p id="home-next-event-timer" class="next-event-timer" aria-live="polite"></p>
+        </aside>
       </section>
 
       <section class="cards">
         <article class="card">
-          <h2>Agenda</h2>
-          <p>Bekijk de aankomende speelavonden en plan je deelname.</p>
-          <a class="button" href="pages/agenda.html">Lees meer</a>
+          <h2>Kalender</h2>
+          <p>Bekijk de aankomende spelavonden en plan je deelname.</p>
+          <a class="button" href="pages/kalender.html">Lees meer</a>
         </article>
         <article class="card">
           <h2>Bordspellenkast</h2>
@@ -49,14 +65,43 @@
         </article>
         <article class="card">
           <h2>Contact</h2>
-          <p>Hoe je ons bereikt en hoe je kunt meedoen aan een speelavond.</p>
+          <p>Hoe je ons bereikt en hoe je kunt meedoen aan een spelavond.</p>
           <a class="button" href="pages/contact.html">Lees meer</a>
         </article>
       </section>
     </main>
-
     <footer>
       &copy; 2026 De Snuffelaars - bordspelclub
     </footer>
+    <script id="home-events-data" type="application/json">
+      [
+        {
+          "date": "2026-04-11",
+          "time": "19:30",
+          "location": "De Snuffel hostel"
+        },
+        {
+          "date": "2026-05-09",
+          "time": "19:30",
+          "location": "De Snuffel hostel"
+        },
+        {
+          "date": "2026-06-06",
+          "time": "19:30",
+          "location": "De Snuffel hostel"
+        },
+        {
+          "date": "2026-07-11",
+          "time": "19:30",
+          "location": "De Snuffel hostel"
+        },
+        {
+          "date": "2026-08-15",
+          "time": "19:30",
+          "location": "De Snuffel hostel"
+        }
+      ]
+    </script>
+    <script src="resources/js/home-events.js"></script>
   </body>
 </html>

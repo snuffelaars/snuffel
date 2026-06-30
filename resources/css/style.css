@@ -17,7 +17,7 @@ body {
 }
 
 nav {
-  background: #222e3c;
+  background: #293144;
   color: white;
   display: flex;
   justify-content: center;
@@ -48,10 +48,35 @@ header {
 
 header img {
   width: 100%;
-  height: auto;
+  height: 340px;
   display: block;
   object-fit: cover;
+  object-position: center 10%;
   max-height: 420px;
+}
+
+/* Feature row: main concept + highlighted next-event */
+.feature-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.feature-main .card {
+  margin: 0;
+}
+
+.feature-event {
+  position: relative;
+  padding: 1rem;
+  border-left: 6px solid #f5c55f;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.1);
+}
+
+.feature-event h2 {
+  margin-top: 0;
 }
 
 .hero {
@@ -103,13 +128,51 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
+  align-items: start;
 }
 
 .card {
   background: white;
   border-radius: 18px;
-  padding: 1.4rem;
+  padding: 1rem 1.2rem 0.75rem;
+  margin: 0.75rem 0;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* Remove extra vertical margin for cards inside the grid (use grid gap instead) */
+.cards .card {
+  margin: 0;
+}
+
+.kalender-item {
+  padding: 0.5rem;
+  border-radius: 14px;
+}
+
+.kalender-item + .kalender-item {
+  margin-top: 0.5rem;
+}
+
+.next-event-timer {
+  margin: 0.75rem 0 1rem;
+  font-weight: 700;
+  color: #293144;
+}
+
+/* Prevent the timer from wrapping and make it slightly more prominent */
+.next-event-timer {
+  white-space: nowrap;
+  font-size: 1.05rem;
+}
+
+.kalender-next {
+  background: #f5c55f;
+  color: #222;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.kalender-past {
+  opacity: 0.5;
 }
 
 .card h2,
@@ -119,7 +182,12 @@ main {
 }
 
 .card p {
-  margin: 0 0 1rem;
+  margin: 0 0 0.6rem;
+  line-height: 1.75;
+}
+
+.card p:last-child {
+  margin-bottom: 0;
 }
 
 .button {
@@ -149,5 +217,14 @@ footer {
 @media (max-width: 600px) {
   nav {
     justify-content: center;
+  }
+}
+
+@media (max-width: 900px) {
+  .feature-row {
+    grid-template-columns: 1fr;
+  }
+  header img {
+    height: 280px;
   }
 }
