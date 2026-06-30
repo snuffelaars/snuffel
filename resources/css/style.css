@@ -330,7 +330,6 @@ footer {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
 }
-}
 
 @media (max-width: 900px) {
   .feature-row {
