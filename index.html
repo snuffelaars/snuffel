@@ -1,156 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>De Snuffelaars</title>
-    <style>
-      :root {
-        color-scheme: dark light;
-        font-family: Inter, Arial, sans-serif;
-        font-size: 16px;
-        line-height: 1.5;
-        background: #f5f2eb;
-        color: #222;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        padding: 0;
-      }
-
-      nav {
-        background: #222e3c;
-        color: white;
-        display: flex;
-        justify-content: center;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-        padding: 1rem 1.25rem;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-
-      nav a {
-        color: white;
-        text-decoration: none;
-        font-weight: 600;
-        transition: color 0.2s ease;
-      }
-
-      nav a:hover,
-      nav a:focus-visible {
-        color: #f5c55f;
-      }
-
-      header {
-        position: relative;
-        overflow: hidden;
-      }
-
-      header img {
-        width: 100%;
-        height: auto;
-        display: block;
-        object-fit: cover;
-        max-height: 420px;
-      }
-
-      .hero {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.35);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-        text-align: center;
-      }
-
-      .hero h1 {
-        margin: 0 0 0.5rem;
-        font-size: clamp(2.5rem, 5vw, 4rem);
-        color: #fff;
-      }
-
-      .hero p {
-        margin: 0;
-        color: #f0f0f0;
-        max-width: 720px;
-      }
-
-      main {
-        padding: 2rem 1.25rem 3rem;
-        max-width: 1080px;
-        margin: 0 auto;
-      }
-
-      section {
-        margin-bottom: 2.5rem;
-      }
-
-      .section-heading {
-        margin-top: 0;
-        margin-bottom: 0.75rem;
-        font-size: 1.75rem;
-        color: #222e3c;
-      }
-
-      .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.25rem;
-      }
-
-      .card {
-        background: white;
-        border-radius: 18px;
-        padding: 1.4rem;
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
-      }
-
-      .card h2 {
-        margin-top: 0;
-        margin-bottom: 0.75rem;
-        font-size: 1.25rem;
-      }
-
-      .card p {
-        margin: 0;
-      }
-
-      .notice {
-        border-left: 4px solid #f5c55f;
-        background: #fff7dc;
-        padding: 1rem 1.15rem;
-        border-radius: 12px;
-      }
-
-      footer {
-        text-align: center;
-        padding: 1.5rem 1.25rem;
-        color: #5d5d5d;
-        font-size: 0.95rem;
-      }
-
-      @media (max-width: 600px) {
-        nav {
-          justify-content: center;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="resources/css/style.css" />
   </head>
   <body>
     <nav>
-      <a href="#agenda">Agenda</a>
-      <a href="#bordspellenkast">Bordspellenkast</a>
-      <a href="#over">Over</a>
-      <a href="#contact">Contact</a>
+      <a href="index.html">Home</a>
+      <a href="agenda.html">Agenda</a>
+      <a href="bordspellenkast.html">Bordspellenkast</a>
+      <a href="over.html">Over</a>
+      <a href="contact.html">Contact</a>
     </nav>
 
     <header>
@@ -164,41 +26,32 @@
     </header>
 
     <main>
-      <section id="agenda">
-        <h2 class="section-heading">Agenda</h2>
-        <div class="cards">
-          <article class="card">
-            <h2>Volgende speelavond</h2>
-            <p>Vrijdag 11 juli | 20:00 uur - Clubhuis De Snuffelaar</p>
-          </article>
-          <article class="card">
-            <h2>Toekomstige data</h2>
-            <p>Elke 2 weken op vrijdag. Bekijk de agenda voor aankomende thema-avonden en gastspelers.</p>
-          </article>
-        </div>
+      <section class="summary">
+        <h2>Samenvatting</h2>
+        <p>De Snuffelaars is een bordspelclub voor iedereen die van spellen houdt. Deze homepage geeft een overzicht van onze agenda, spellenkast, clubinformatie en contactgegevens.</p>
       </section>
 
-      <section id="bordspellenkast">
-        <h2 class="section-heading">Bordspellenkast</h2>
-        <div class="card">
-          <p>Onze collectie groeit elke maand met nieuwe spellen. In de toekomst kunnen we deze pagina koppelen aan BGA voor beschikbaarheid en online profielen.</p>
-          <div class="notice">
-            <strong>Tip:</strong> later kunnen we hier direct linken naar BGA-spelpagina's en aanbevelingen delen.
-          </div>
-        </div>
-      </section>
-
-      <section id="over">
-        <h2 class="section-heading">Over De Snuffelaars</h2>
-        <p>De Snuffelaars is een Nederlandse bordspelclub voor iedereen die van spellen houdt. We organiseren gezellige avonden, spelen klassiekers en ontdekken nieuwe titels samen.</p>
-      </section>
-
-      <section id="contact">
-        <h2 class="section-heading">Contact</h2>
-        <div class="card">
-          <p>Wil je meedoen of heb je vragen? Stuur een bericht via e-mail of kom langs op één van onze avonden.</p>
-          <p><strong>E-mail:</strong> info@desnuffelaars.nl</p>
-        </div>
+      <section class="cards">
+        <article class="card">
+          <h2>Agenda</h2>
+          <p>Bekijk de aankomende speelavonden en plan je deelname.</p>
+          <a class="button" href="agenda.html">Lees meer</a>
+        </article>
+        <article class="card">
+          <h2>Bordspellenkast</h2>
+          <p>Onze collectie spellen en toekomstige BGA-koppeling.</p>
+          <a class="button" href="bordspellenkast.html">Lees meer</a>
+        </article>
+        <article class="card">
+          <h2>Over</h2>
+          <p>Ontdek wie we zijn en wat we met De Snuffelaars doen.</p>
+          <a class="button" href="over.html">Lees meer</a>
+        </article>
+        <article class="card">
+          <h2>Contact</h2>
+          <p>Hoe je ons bereikt en hoe je kunt meedoen aan een speelavond.</p>
+          <a class="button" href="contact.html">Lees meer</a>
+        </article>
       </section>
     </main>
 

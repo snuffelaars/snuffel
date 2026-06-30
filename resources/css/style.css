@@ -1,0 +1,153 @@
+:root {
+  color-scheme: dark light;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  background: #f5f2eb;
+  color: #222;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+nav {
+  background: #222e3c;
+  color: white;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+nav a:hover,
+nav a:focus-visible {
+  color: #f5c55f;
+}
+
+header {
+  position: relative;
+  overflow: hidden;
+}
+
+header img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  max-height: 420px;
+}
+
+.hero {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.hero h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  color: #fff;
+}
+
+.hero p {
+  margin: 0;
+  color: #f0f0f0;
+  max-width: 720px;
+}
+
+main {
+  padding: 2rem 1.25rem 3rem;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.summary {
+  margin-bottom: 2rem;
+}
+
+.summary h2 {
+  margin-top: 0;
+  font-size: 2rem;
+  color: #222e3c;
+}
+
+.summary p {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #424242;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 1.4rem;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+.card h2,
+.card h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+.card p {
+  margin: 0 0 1rem;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.75rem 1.1rem;
+  color: #222e3c;
+  background: #f5c55f;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.notice {
+  border-left: 4px solid #f5c55f;
+  background: #fff7dc;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+}
+
+footer {
+  text-align: center;
+  padding: 1.5rem 1.25rem;
+  color: #5d5d5d;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+  nav {
+    justify-content: center;
+  }
+}
