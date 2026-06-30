@@ -38,6 +38,17 @@ class EventBoardGameManager {
     }
   }
 
+  addVisibilityHandlers() {
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.setStatus('Pagina opnieuw laden…');
+        this.loadEvents().catch((error) => {
+          console.error('Kon evenementen niet opnieuw laden:', error);
+        });
+      }
+    });
+  }
+
   async loadEvents() {
     try {
       if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey) {
