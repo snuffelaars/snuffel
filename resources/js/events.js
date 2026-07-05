@@ -4,7 +4,7 @@ class EventCalendarManager {
   }
 
   static parseEventDateTime(event) {
-    return new Date(`${event.date}T${event.time || '19:30'}:00`);
+    return new Date(`${event.date}T${event.time || '19:45'}:00`);
   }
 
   static formatEventDateLabel(date) {
@@ -124,7 +124,7 @@ class EventCalendarManager {
       const eventDateLabel = EventCalendarManager.formatEventDateLabel(nextEvent.dateTime);
       containerElement.innerHTML = `
         <p><strong>${eventDateLabel}</strong></p>
-        <p>${nextEvent.time || '19:30'} uur – ${nextEvent.location || 'De Snuffel hostel'}</p>
+        <p>${nextEvent.time || '19:45'} uur – ${nextEvent.location || 'De Snuffel hostel'}</p>
       `;
 
       const updateTimer = () => {
@@ -174,7 +174,7 @@ class EventCalendarManager {
 
     const parseItemDateTime = (item) => EventCalendarManager.parseEventDateTime({
       date: item.dataset.date,
-      time: item.dataset.time || '19:30',
+      time: item.dataset.time || '19:45',
     });
 
     const updateCalendar = () => {
@@ -225,8 +225,8 @@ class EventCalendarManager {
           const location = event.location || 'De Snuffel hostel';
 
           return `
-            <div class="kalender-item" data-date="${event.date}" data-time="${event.time || '19:30'}">
-              <p><strong>${formattedDate}</strong> | ${event.time || '19:30'} uur – ${location}</p>
+            <div class="kalender-item" data-date="${event.date}" data-time="${event.time || '19:45'}">
+              <p><strong>${formattedDate}</strong> | ${event.time || '19:45'} uur – ${location}</p>
             </div>
           `;
         })
