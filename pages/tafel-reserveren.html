@@ -33,7 +33,7 @@
 
         <form id="event-form" class="event-form">
           <div class="cards">
-            <div class="card">
+            <!-- <div class="card">
               <h3>Zoek in BGG</h3>
               <label>
                 Bordspelnaam
@@ -42,7 +42,7 @@
               </label>
 
               <div id="bgg-results" class="bgg-results"></div>
-            </div>
+            </div> -->
 
             <div class="card">
               <h3>Nieuw evenement</h3>
@@ -73,14 +73,12 @@
                 <input id="max-players" name="max-players" type="number" min="1" required />
               </label>
 
-              <label>
-                <input id="can-explain" name="can-explain" type="checkbox" checked />
-                Ik kan het spel uitleggen
+              <label class="checkbox-label">
+                <input id="can-explain" name="can-explain" type="checkbox" checked />Ik kan het spel uitleggen
               </label>
-
-              <label>
-                <input id="creator-joins" name="creator-joins" type="checkbox" checked />
-                Ik doe mee
+              <br>
+              <label class="checkbox-label">
+                <input id="creator-joins" name="creator-joins" type="checkbox" checked />Ik doe mee
               </label>
 
               <input id="bgg-id" name="bgg-id" type="hidden" />

@@ -264,6 +264,18 @@ footer {
   font-weight: 600;
 }
 
+.event-form label.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.event-form input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+  margin: 0;
+}
+
 .event-form input,
 .event-form textarea {
   width: 100%;
@@ -307,8 +319,25 @@ footer {
 
 .events-list {
   display: grid;
+  gap: 2rem;
+}
+
+.event-group {
+  display: contents;
+}
+
+.event-group-title {
+  grid-column: 1 / -1;
+  margin: 1rem 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #293144;
+}
+
+.event-group-cards {
+  display: grid;
   grid-template-columns: repeat(4, minmax(220px, 1fr));
   gap: 1rem;
+  grid-column: 1 / -1;
 }
 
 .event-card {
@@ -359,14 +388,20 @@ footer {
     justify-content: center;
   }
 
-  .events-list {
-    grid-template-columns: 1fr;
+  .event-group-cards {
+    grid-template-columns: 1fr !important;
   }
 }
 
 @media (min-width: 601px) and (max-width: 900px) {
-  .events-list {
-    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  .event-group-cards {
+    grid-template-columns: repeat(2, minmax(220px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .event-group-cards {
+    grid-template-columns: repeat(3, minmax(220px, 1fr)) !important;
   }
 }
 
