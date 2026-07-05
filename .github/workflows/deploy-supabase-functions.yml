@@ -1,0 +1,26 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/deploy-supabase-functions.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Deploy delete-table function
+        run: npx supabase@latest functions deploy delete-table --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --access-token ${{ secrets.SUPABASE_ACCESS_TOKEN }}

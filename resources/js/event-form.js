@@ -15,6 +15,8 @@ class EventBoardGameManager {
     this.lookupButton = document.getElementById('lookup-bgg');
     this.boardgameNameInput = document.getElementById('boardgame-name');
     this.maxPlayersInput = document.getElementById('max-players');
+    this.canExplainInput = document.getElementById('can-explain');
+    this.creatorJoinsInput = document.getElementById('creator-joins');
     this.bggIdInput = document.getElementById('bgg-id');
     this.thumbnailInput = document.getElementById('thumbnail-url');
     this.descriptionInput = document.getElementById('description');
@@ -287,7 +289,12 @@ class EventBoardGameManager {
   }
 
   async persistSignupToSupabase(signup) {
-    const payloadCandidates = [
+    const basePayloads = [
+      { boardgame_table_id: signup.tableId, name: signup.name, email: signup.email, joined_at: signup.joinedAt },
+      { event_id: signup.tableId, name: signup.name, email: signup.email, joined_at: signup.joinedAt },
+      { table_id: signup.tableId, name: signup.name, email: signup.email, joined_at: signup.joinedAt },
+    ];
+    const fallbackPayloads = [
       { boardgame_table_id: signup.tableId, name: signup.name, joined_at: signup.joinedAt },
       { event_id: signup.tableId, name: signup.name, joined_at: signup.joinedAt },
       { table_id: signup.tableId, name: signup.name, joined_at: signup.joinedAt },
@@ -295,7 +302,7 @@ class EventBoardGameManager {
 
     let lastError = null;
 
-    for (const payload of payloadCandidates) {
+    for (const payload of [...basePayloads, ...fallbackPayloads]) {
       try {
         const response = await fetch(`${this.supabaseConfig.url}/rest/v1/signups`, {
           method: 'POST',
@@ -329,6 +336,30 @@ class EventBoardGameManager {
     this.statusElement.classList.toggle('status-error', isError);
   }
 
+  getCreatorDisplayName(creatorEmail) {
+    const trimmedEmail = (creatorEmail || '').toString().trim();
+    if (!trimmedEmail) {
+      return 'Organisator';
+    }
+
+    const localPart = trimmedEmail.split('@')[0]?.trim();
+    if (!localPart) {
+      return 'Organisator';
+    }
+
+    return localPart.replace(/[._-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  createCreatorSignupRecord(creatorEmail, eventId) {
+    return {
+      id: this.generateId(),
+      name: this.getCreatorDisplayName(creatorEmail),
+      email: creatorEmail,
+      joinedAt: new Date().toISOString(),
+      tableId: eventId,
+    };
+  }
+
   async handleCreateEvent(event) {
     event.preventDefault();
 
@@ -342,6 +373,8 @@ class EventBoardGameManager {
     const date = (formData.get('date') || '').toString().trim();
     const time = (formData.get('time') || '').toString().trim();
     const maxPlayers = Number(formData.get('max-players') || 0);
+    const canExplain = this.canExplainInput ? this.canExplainInput.checked : true;
+    const creatorJoins = this.creatorJoinsInput ? this.creatorJoinsInput.checked : true;
 
     if (!title || !date || !time || !maxPlayers) {
       this.setStatus('Vul alle verplichte velden in, inclusief een geldig max. aantal spelers.', true);
@@ -366,9 +399,19 @@ class EventBoardGameManager {
       description: (formData.get('description') || '').toString().trim(),
       creatorEmail,
       deleteCode,
+      canExplain,
+      creatorJoins,
       signups: [],
       createdAt: new Date().toISOString(),
     };
+
+    const creatorSignup = creatorJoins
+      ? this.createCreatorSignupRecord(creatorEmail, newEvent.id)
+      : null;
+
+    if (creatorSignup) {
+      newEvent.signups = [creatorSignup];
+    }
 
     this.setStatus('Evenement wordt opgeslagen...');
 
@@ -376,6 +419,18 @@ class EventBoardGameManager {
       if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey) {
         const savedEvent = await this.persistToSupabase(newEvent);
         const mappedEvent = this.mapSupabaseRowToEvent({ ...savedEvent, signups: savedEvent.signups || [] });
+
+        if (creatorSignup) {
+          const persistedSignup = await this.persistSignupToSupabase({
+            tableId: savedEvent.id || newEvent.id,
+            name: creatorSignup.name,
+            email: creatorSignup.email,
+            joinedAt: creatorSignup.joinedAt,
+          });
+
+          mappedEvent.signups = [{ ...creatorSignup, id: persistedSignup?.id || creatorSignup.id }];
+        }
+
         this.events = [mappedEvent, ...this.events];
       } else {
         this.events = [newEvent, ...this.events];
@@ -389,7 +444,7 @@ class EventBoardGameManager {
         this.bggResults.innerHTML = '';
       }
 
-      await this.showDeleteCodeNotice(deleteCode, creatorEmail, title);
+      await this.showDeleteCodeNotice(deleteCode, creatorEmail, title, creatorSignup ? 'Je bent automatisch ingeschreven als deelnemer.' : '');
       await this.loadEvents();
     } catch (error) {
       console.error('Kon evenement niet opslaan:', error);
@@ -400,12 +455,30 @@ class EventBoardGameManager {
   async handleSignup(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    const submitter = event.submitter;
+    const formData = new FormData(form);
     const eventId = form.dataset.eventId;
-    const name = (new FormData(form).get('signup-name') || '').toString().trim();
+    const action = submitter?.dataset?.action || (formData.get('signup-action') || 'join').toString().trim();
+    const name = (formData.get('signup-name') || '').toString().trim();
+    const email = (formData.get('signup-email') || '').toString().trim();
 
     if (!name) {
       this.setStatus('Vul je naam in om je in te schrijven.', true);
       return;
+    }
+
+    if (!email) {
+      this.setStatus('Vul je e-mailadres in om je in te schrijven.', true);
+      return;
+    }
+
+    if (!this.isValidEmail(email)) {
+      this.setStatus('Vul een geldig e-mailadres in om je in te schrijven.', true);
+      return;
+    }
+
+    if (action === 'leave') {
+      return this.handleUnsubscribe(eventId, name, email);
     }
 
     const targetEvent = this.events.find((item) => item.id === eventId);
@@ -423,6 +496,7 @@ class EventBoardGameManager {
     const signupRecord = {
       id: this.generateId(),
       name,
+      email,
       joinedAt: new Date().toISOString(),
     };
     targetEvent.signups.push(signupRecord);
@@ -433,6 +507,7 @@ class EventBoardGameManager {
         await this.persistSignupToSupabase({
           tableId: eventId,
           name,
+          email,
           joinedAt: signupRecord.joinedAt,
         });
         await this.loadEvents();
@@ -444,6 +519,37 @@ class EventBoardGameManager {
     } catch (error) {
       console.error('Kon inschrijving niet opslaan:', error);
       this.setStatus('Er ging iets mis bij het verwerken van je inschrijving.', true);
+    }
+  }
+
+  async handleUnsubscribe(tableId, name, email) {
+    if (!tableId) {
+      return;
+    }
+
+    this.setStatus('Je uitschrijving wordt verwerkt...');
+
+    try {
+      const response = await fetch(`${this.supabaseConfig.url}/functions/v1/unsubscribe-table`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: this.supabaseConfig.anonKey,
+          Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
+        },
+        body: JSON.stringify({ tableId, name, email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Unsubscribe HTTP ${response.status}`);
+      }
+
+      await this.loadEvents();
+      this.setStatus('Je bent uitgeschreven van de tafel.');
+    } catch (error) {
+      console.error('Kon uitschrijving niet verwerken:', error);
+      this.setStatus('Er ging iets mis bij het uitschrijven.', true);
     }
   }
 
@@ -479,7 +585,7 @@ class EventBoardGameManager {
 
     try {
       if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey) {
-        await this.deleteFromSupabase(eventId);
+        await this.deleteFromSupabase(eventId, enteredCode);
       }
 
       this.events = this.events.filter((event) => event.id !== eventId);
@@ -487,26 +593,78 @@ class EventBoardGameManager {
         this.saveToLocalStorage(this.events);
       }
 
+      const notifiedParticipants = await this.sendCancellationEmails(targetEvent);
       this.renderEvents();
-      this.setStatus('De tafel is verwijderd.');
+      this.setStatus(notifiedParticipants ? 'De tafel is verwijderd. De deelnemers hebben een melding ontvangen.' : 'De tafel is verwijderd.');
     } catch (error) {
       console.error('Kon tafel niet verwijderen:', error);
       this.setStatus('Er ging iets mis bij het verwijderen van de tafel.', true);
     }
   }
 
-  async deleteFromSupabase(eventId) {
-    const response = await fetch(`${this.supabaseConfig.url}/rest/v1/boardgame_tables?id=eq.${encodeURIComponent(eventId)}`, {
-      method: 'DELETE',
+  async deleteFromSupabase(eventId, deleteCode) {
+    const response = await fetch(`${this.supabaseConfig.url}/functions/v1/delete-table`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         apikey: this.supabaseConfig.anonKey,
         Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
       },
+      body: JSON.stringify({ eventId, deleteCode }),
     });
 
     if (!response.ok) {
-      throw new Error(`Supabase delete HTTP ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Supabase delete HTTP ${response.status}`);
     }
+  }
+
+  async sendCancellationEmails(event) {
+    if (!this.supabaseConfig?.url || !this.supabaseConfig?.anonKey) {
+      return false;
+    }
+
+    const recipients = Array.from(new Map((event.signups || [])
+      .map((signup) => [String(signup.email || '').trim().toLowerCase(), signup]))
+      .values())
+      .map((signup) => ({
+        name: signup.name || 'Deelnemer',
+        email: String(signup.email || '').trim(),
+      }))
+      .filter(({ email }) => this.isValidEmail(email));
+
+    if (recipients.length === 0) {
+      return false;
+    }
+
+    const subject = `Tafel gecanceld: ${event.title}`;
+    const body = `Hallo,
+
+De tafel "${event.title}" op De Snuffelaars is geannuleerd.
+
+Je kunt op zoek gaan naar een andere tafel of een nieuwe tafel aanmaken.`;
+
+    let sentAll = true;
+
+    for (const recipient of recipients) {
+      try {
+        const emailed = await this.sendTableEmail({
+          to: recipient.email,
+          title: event.title,
+          subject,
+          body: `Hallo ${recipient.name},\n\n${body}`,
+        });
+
+        if (!emailed) {
+          sentAll = false;
+        }
+      } catch (error) {
+        console.error('Kon annuleringsemail niet versturen:', error);
+        sentAll = false;
+      }
+    }
+
+    return sentAll;
   }
 
   renderEvents() {
@@ -619,6 +777,8 @@ class EventBoardGameManager {
     const signupNames = (event.signups || []).map((signup) => signup.name).join(', ');
     const remainingSpots = event.maxPlayers ? event.maxPlayers - signupCount : 'onbeperkt';
     const badgeText = event.maxPlayers ? `${signupCount}/${event.maxPlayers}` : `${signupCount} deelnemer(s)`;
+    const canExplainText = event.canExplain === false ? 'Nee' : 'Ja';
+    const creatorJoinsText = event.creatorJoins === false ? 'Nee' : 'Ja';
 
     return `
       <article class="event-card">
@@ -631,14 +791,19 @@ class EventBoardGameManager {
         </div>
         <p><strong>Start:</strong> ${this.escapeHtml(event.date)} om ${this.escapeHtml(event.time)}</p>
         <p><strong>Max spelers:</strong> ${this.escapeHtml(String(event.maxPlayers || 'Onbekend'))}</p>
+        <p><strong>Spel uitleg:</strong> ${this.escapeHtml(canExplainText)}</p>
+        <p><strong>Organisator doet mee:</strong> ${this.escapeHtml(creatorJoinsText)}</p>
         <p><strong>Inschrijvingen:</strong> <span class="signup-count">${this.escapeHtml(badgeText)}</span></p>
         <p><strong>Vrije plaatsen:</strong> ${this.escapeHtml(String(remainingSpots))}</p>
         <p><strong>Deelnemers:</strong> ${this.escapeHtml(signupNames || 'Nog niemand')}</p>
         <p class="event-card-note">Verwijderbaar met het e-mailadres en de verwijdercode die je bij het aanmaken hebt ontvangen.</p>
         <div class="event-card-actions">
           <form class="signup-form" data-event-id="${this.escapeHtml(event.id)}">
-            <input type="text" name="signup-name" placeholder="Jouw naam" required />
-            <button type="submit" class="button small">Inschrijven</button>
+            <input type="hidden" name="signup-action" value="join" />
+            <input type="text" name="signup-name" placeholder="Jouw naam" autocomplete="name" required />
+            <input type="email" name="signup-email" placeholder="Jouw e-mailadres" autocomplete="email" required />
+            <button type="submit" class="button small" data-action="join">Inschrijven</button>
+            <button type="submit" class="button small danger-button" data-action="leave">Uitschrijven</button>
           </form>
           <button type="button" class="button small danger-button delete-event-button" data-event-id="${this.escapeHtml(event.id)}" data-event-title="${this.escapeHtml(event.title)}">Verwijderen</button>
         </div>
@@ -804,9 +969,10 @@ class EventBoardGameManager {
     }
   }
 
-  async showDeleteCodeNotice(deleteCode, creatorEmail, title) {
+  async showDeleteCodeNotice(deleteCode, creatorEmail, title, extraMessage = '') {
     const subject = `Verwijdercode voor tafel: ${title}`;
     const body = `Hallo,\n\nJe hebt een tafel aangemaakt op De Snuffelaars.\n\nTafel: ${title}\nVerwijdercode: ${deleteCode}\n\nGebruik deze code om de tafel later zelf te verwijderen.`;
+    const extraNotice = extraMessage ? ` ${extraMessage}` : '';
 
     if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey && creatorEmail) {
       try {
@@ -819,7 +985,7 @@ class EventBoardGameManager {
         });
 
         if (emailed) {
-          this.setStatus(`Tafel is aangemaakt. De verwijdercode is verzonden naar ${creatorEmail}.`);
+          this.setStatus(`Tafel is aangemaakt. De verwijdercode is verzonden naar ${creatorEmail}.${extraNotice}`);
           return;
         }
       } catch (error) {
@@ -833,10 +999,10 @@ class EventBoardGameManager {
       window.location.href = `mailto:${encodeURIComponent(creatorEmail)}?subject=${mailtoSubject}&body=${mailtoBody}`;
     }
 
-    this.setStatus(`Tafel is aangemaakt. Bewaar de verwijdercode ${deleteCode}. Je kunt deze later gebruiken om de tafel zelf te verwijderen.`);
+    this.setStatus(`Tafel is aangemaakt. Bewaar de verwijdercode ${deleteCode}. Je kunt deze later gebruiken om de tafel zelf te verwijderen.${extraNotice}`);
   }
 
-  async sendDeleteCodeEmail({ to, title, deleteCode, subject, body }) {
+  async sendTableEmail({ to, title, subject, body, deleteCode }) {
     if (!this.supabaseConfig?.url || !this.supabaseConfig?.anonKey) {
       return false;
     }
@@ -864,6 +1030,10 @@ class EventBoardGameManager {
 
     const data = await response.json();
     return Boolean(data?.success);
+  }
+
+  async sendDeleteCodeEmail({ to, title, deleteCode, subject, body }) {
+    return this.sendTableEmail({ to, title, deleteCode, subject, body });
   }
 
   generateDeleteCode() {
