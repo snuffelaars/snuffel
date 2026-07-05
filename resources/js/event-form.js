@@ -7,6 +7,8 @@ class EventBoardGameManager {
     this.eventsList = document.getElementById('events-list');
     this.statusElement = document.getElementById('form-status');
     this.bggSearchInput = document.getElementById('bgg-search');
+    this.calendarDataUrl = this.getCalendarDataUrl();
+    this.calendarFallbackDates = this.getFallbackCalendarDates();
     this.bggResults = document.getElementById('bgg-results');
     this.lookupButton = document.getElementById('lookup-bgg');
     this.boardgameNameInput = document.getElementById('boardgame-name');
@@ -17,7 +19,83 @@ class EventBoardGameManager {
     this.events = [];
     this.bindEvents();
     this.addVisibilityHandlers();
+    this.initializeDateField();
     this.loadEvents();
+  }
+
+  getCalendarDataUrl() {
+    const currentPath = window.location.pathname || '';
+    if (currentPath.includes('/pages/')) {
+      return '../resources/json/kalender.json';
+    }
+
+    return 'resources/json/kalender.json';
+  }
+
+  async initializeDateField() {
+    const dateInput = this.form?.querySelector('input[name="date"]') || document.querySelector('input[name="date"]');
+    if (!dateInput) {
+      return;
+    }
+
+    const today = this.getDateOnlyString(new Date());
+
+    try {
+      const response = await fetch(this.calendarDataUrl, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Kalender HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const upcomingDate = this.getUpcomingCalendarDate(data, today);
+      dateInput.value = upcomingDate || today;
+    } catch (error) {
+      console.warn('Kon kalenderdata niet laden voor de datumvoorselectie:', error);
+      const fallbackDate = this.getUpcomingCalendarDate(this.calendarFallbackDates, today);
+      dateInput.value = fallbackDate || today;
+    }
+  }
+
+  getUpcomingCalendarDate(data, today) {
+    if (!Array.isArray(data)) {
+      return '';
+    }
+
+    return data
+      .map((item) => this.normalizeCalendarDate(item?.date))
+      .filter(Boolean)
+      .sort()
+      .find((value) => value >= today) || '';
+  }
+
+  getFallbackCalendarDates() {
+    return [
+      { date: '2025-12-20', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2026-01-31', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2026-02-21', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2026-03-07', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2026-04-11', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2026-05-09', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2026-06-06', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2026-07-11', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2026-08-15', time: '19:30', location: 'De Snuffel hostel' },
+    ];
+  }
+
+  normalizeCalendarDate(value) {
+    if (typeof value !== 'string') {
+      return '';
+    }
+
+    const trimmed = value.trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : '';
+  }
+
+  getDateOnlyString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   bindEvents() {
@@ -304,6 +382,7 @@ class EventBoardGameManager {
 
       this.renderEvents();
       this.form.reset();
+      await this.initializeDateField();
       if (this.bggResults) {
         this.bggResults.innerHTML = '';
       }
@@ -382,16 +461,10 @@ class EventBoardGameManager {
       return;
     }
 
-    const enteredEmail = (window.prompt('Voer het e-mailadres in dat je bij de tafel hebt gebruikt.') || '').toString().trim();
-    const enteredCode = (window.prompt('Voer de verwijdercode in die je hebt ontvangen.') || '').toString().trim();
+    const enteredCode = (window.prompt('Voer de verwijdercode in die je hebt ontvangen.\n\nLet op: controleer ook je spam/junk folder!') || '').toString().trim();
 
-    if (!enteredEmail || !enteredCode) {
-      this.setStatus('Vul zowel je e-mailadres als je verwijdercode in.', true);
-      return;
-    }
-
-    if (String(targetEvent.creatorEmail || '').toLowerCase() !== enteredEmail.toLowerCase()) {
-      this.setStatus('Het e-mailadres komt niet overeen met deze tafel.', true);
+    if (!enteredCode) {
+      this.setStatus('Voer je verwijdercode in.', true);
       return;
     }
 
@@ -439,18 +512,104 @@ class EventBoardGameManager {
       return;
     }
 
-    if (this.events.length === 0) {
-      this.eventsList.innerHTML = '<p class="empty-state">Er zijn nog geen evenementen. Maak de eerste spelavond aan.</p>';
+    const upcomingEvents = this.events
+      .filter((event) => this.isEventUpcoming(event))
+      .sort((left, right) => this.compareEventDates(left, right));
+
+    if (upcomingEvents.length === 0) {
+      this.eventsList.innerHTML = '<p class="empty-state">Er zijn momenteel geen toekomstige spelavonden met open tafels.</p>';
       return;
     }
 
-    this.eventsList.innerHTML = this.events
-      .map((event) => this.renderEventCard(event))
+    const groupedEvents = upcomingEvents.reduce((groups, event) => {
+      const dateKey = this.getEventDateKey(event);
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+
+      groups[dateKey].push(event);
+      return groups;
+    }, {});
+
+    this.eventsList.innerHTML = Object.entries(groupedEvents)
+      .sort(([leftDate], [rightDate]) => leftDate.localeCompare(rightDate))
+      .map(([dateKey, eventsForDate]) => {
+        return `
+          <section class="event-group">
+            <h3 class="event-group-title">Tafels voor spelavond op ${this.escapeHtml(this.formatEventDateLabel(dateKey))}</h3>
+            <div class="event-group-cards">
+              ${eventsForDate.map((event) => this.renderEventCard(event)).join('')}
+            </div>
+          </section>
+        `;
+      })
       .join('');
 
     this.eventsList.querySelectorAll('.signup-form').forEach((form) => {
       form.addEventListener('submit', (event) => this.handleSignup(event));
     });
+  }
+
+  isEventUpcoming(event) {
+    const eventDateTime = this.getEventDateTime(event);
+    if (!eventDateTime) {
+      return false;
+    }
+
+    return eventDateTime >= new Date();
+  }
+
+  compareEventDates(left, right) {
+    const leftDateTime = this.getEventDateTime(left);
+    const rightDateTime = this.getEventDateTime(right);
+
+    if (!leftDateTime || !rightDateTime) {
+      return this.getEventDateKey(left).localeCompare(this.getEventDateKey(right));
+    }
+
+    return leftDateTime - rightDateTime;
+  }
+
+  getEventDateKey(event) {
+    return this.normalizeCalendarDate(event?.date) || 'onbekend';
+  }
+
+  getEventDateTime(event) {
+    const dateValue = this.normalizeCalendarDate(event?.date);
+    const timeValue = this.normalizeEventTime(event?.time);
+
+    if (!dateValue || !timeValue) {
+      return null;
+    }
+
+    const [year, month, day] = dateValue.split('-').map(Number);
+    const [hours, minutes] = timeValue.split(':').map(Number);
+
+    return new Date(year, month - 1, day, hours, minutes);
+  }
+
+  normalizeEventTime(value) {
+    if (typeof value !== 'string') {
+      return '';
+    }
+
+    const trimmed = value.trim();
+    return /^\d{1,2}:\d{2}(?::\d{2})?$/.test(trimmed) ? trimmed : '';
+  }
+
+  formatEventDateLabel(dateValue) {
+    const normalizedDate = this.normalizeCalendarDate(dateValue);
+    if (!normalizedDate) {
+      return 'onbekende datum';
+    }
+
+    const [year, month, day] = normalizedDate.split('-').map(Number);
+    const parsedDate = new Date(year, month - 1, day);
+    return new Intl.DateTimeFormat('nl-NL', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(parsedDate);
   }
 
   renderEventCard(event) {
