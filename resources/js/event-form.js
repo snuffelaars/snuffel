@@ -15,6 +15,7 @@ class EventBoardGameManager {
     this.lookupButton = document.getElementById('lookup-bgg');
     this.boardgameNameInput = document.getElementById('boardgame-name');
     this.maxPlayersInput = document.getElementById('max-players');
+    this.creatorNameInput = document.getElementById('creator-name');
     this.canExplainInput = document.getElementById('can-explain');
     this.creatorJoinsInput = document.getElementById('creator-joins');
     this.bggIdInput = document.getElementById('bgg-id');
@@ -246,6 +247,7 @@ class EventBoardGameManager {
       bggId: row.bgg_id || row.bggId || '',
       thumbnail: row.thumbnail_url || row.thumbnail || '',
       description: row.description || '',
+      creatorName: row.creator_name || row.creatorName || '',
       creatorEmail: row.creator_email || row.creatorEmail || '',
       deleteCode: row.delete_code || row.deleteCode || '',
       canExplain: row.creator_explains ?? row.canExplain ?? true,
@@ -255,8 +257,8 @@ class EventBoardGameManager {
     };
   }
 
-  mapEventToSupabaseRow(event) {
-    return {
+  mapEventToSupabaseRow(event, includeCreatorFields = true) {
+    const row = {
       boardgame_name: event.boardgameName || event.title,
       date: event.date,
       time: event.time,
@@ -266,13 +268,22 @@ class EventBoardGameManager {
       description: event.description,
       creator_email: event.creatorEmail,
       delete_code: event.deleteCode,
-      creator_explains: event.canExplain,
-      creator_joins: event.creatorJoins,
       created_at: event.createdAt,
     };
+
+    if (includeCreatorFields) {
+      row.creator_explains = event.canExplain;
+      row.creator_joins = event.creatorJoins;
+    }
+
+    if (event.creatorName) {
+      row.creator_name = event.creatorName;
+    }
+
+    return row;
   }
 
-  async persistToSupabase(event) {
+  async persistToSupabase(event, includeCreatorFields = true) {
     const response = await fetch(`${this.supabaseConfig.url}/rest/v1/boardgame_tables`, {
       method: 'POST',
       headers: {
@@ -281,11 +292,13 @@ class EventBoardGameManager {
         Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
         Prefer: 'return=representation',
       },
-      body: JSON.stringify(this.mapEventToSupabaseRow(event)),
+      body: JSON.stringify(this.mapEventToSupabaseRow(event, includeCreatorFields)),
     });
 
     if (!response.ok) {
-      throw new Error(`Supabase POST HTTP ${response.status}`);
+      const errorText = await response.text().catch(() => '');
+      const parsed = errorText ? errorText : `Status ${response.status}`;
+      throw new Error(`Supabase POST HTTP ${response.status}: ${parsed}`);
     }
 
     const data = await response.json();
@@ -354,10 +367,10 @@ class EventBoardGameManager {
     return localPart.replace(/[._-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
-  createCreatorSignupRecord(creatorEmail, eventId) {
+  createCreatorSignupRecord(creatorName, creatorEmail, eventId) {
     return {
       id: this.generateId(),
-      name: this.getCreatorDisplayName(creatorEmail),
+      name: creatorName || this.getCreatorDisplayName(creatorEmail),
       email: creatorEmail,
       joinedAt: new Date().toISOString(),
       tableId: eventId,
@@ -373,6 +386,7 @@ class EventBoardGameManager {
 
     const formData = new FormData(this.form);
     const title = (formData.get('boardgame-name') || '').toString().trim();
+    const creatorName = (formData.get('creator-name') || '').toString().trim();
     const creatorEmail = (formData.get('creator-email') || '').toString().trim();
     const date = (formData.get('date') || '').toString().trim();
     const time = (formData.get('time') || '').toString().trim();
@@ -380,8 +394,8 @@ class EventBoardGameManager {
     const canExplain = this.canExplainInput ? this.canExplainInput.checked : true;
     const creatorJoins = this.creatorJoinsInput ? this.creatorJoinsInput.checked : true;
 
-    if (!title || !date || !time || !maxPlayers) {
-      this.setStatus('Vul alle verplichte velden in, inclusief een geldig max. aantal spelers.', true);
+    if (!title || !creatorName || !date || !time || !maxPlayers) {
+      this.setStatus('Vul alle verplichte velden in, inclusief de naam en een geldig max. aantal spelers.', true);
       return;
     }
 
@@ -401,6 +415,7 @@ class EventBoardGameManager {
       bggId: (formData.get('bgg-id') || '').toString().trim(),
       thumbnail: (formData.get('thumbnail-url') || '').toString().trim(),
       description: (formData.get('description') || '').toString().trim(),
+      creatorName,
       creatorEmail,
       deleteCode,
       canExplain,
@@ -410,7 +425,7 @@ class EventBoardGameManager {
     };
 
     const creatorSignup = creatorJoins
-      ? this.createCreatorSignupRecord(creatorEmail, newEvent.id)
+      ? this.createCreatorSignupRecord(creatorName, creatorEmail, newEvent.id)
       : null;
 
     if (creatorSignup) {
@@ -421,27 +436,46 @@ class EventBoardGameManager {
 
     try {
       if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey) {
-        const savedEvent = await this.persistToSupabase(newEvent);
-        const mappedEvent = this.mapSupabaseRowToEvent({ ...savedEvent, signups: savedEvent.signups || [] });
+        let savedEvent;
 
-        if (creatorSignup) {
-          const persistedSignup = await this.persistSignupToSupabase({
-            tableId: savedEvent.id || newEvent.id,
-            name: creatorSignup.name,
-            email: creatorSignup.email,
-            joinedAt: creatorSignup.joinedAt,
-          });
-
-          mappedEvent.signups = [{ ...creatorSignup, id: persistedSignup?.id || creatorSignup.id }];
+        try {
+          savedEvent = await this.persistToSupabase(newEvent);
+        } catch (error) {
+          const message = error?.message || '';
+          if (message.includes('creator_explains') || message.includes('creator_joins') || message.includes('unknown column')) {
+            console.warn('Retrying Supabase insert without creator_explains/creator_joins:', error);
+            savedEvent = await this.persistToSupabase(newEvent, false);
+          } else {
+            throw error;
+          }
         }
 
+        const mappedEvent = this.mapSupabaseRowToEvent({ ...savedEvent, signups: savedEvent.signups || [] });
+
         this.events = [mappedEvent, ...this.events];
+        this.renderEvents();
+
+        if (creatorSignup) {
+          try {
+            const persistedSignup = await this.persistSignupToSupabase({
+              tableId: savedEvent.id || newEvent.id,
+              name: creatorSignup.name,
+              email: creatorSignup.email,
+              joinedAt: creatorSignup.joinedAt,
+            });
+
+            mappedEvent.signups = [{ ...creatorSignup, id: persistedSignup?.id || creatorSignup.id }];
+            this.renderEvents();
+          } catch (signupError) {
+            console.warn('Kon de organisator niet automatisch inschrijven:', signupError);
+          }
+        }
       } else {
         this.events = [newEvent, ...this.events];
         this.saveToLocalStorage(this.events);
+        this.renderEvents();
       }
 
-      this.renderEvents();
       this.form.reset();
       await this.initializeDateField();
       if (this.bggResults) {
@@ -449,7 +483,11 @@ class EventBoardGameManager {
       }
 
       await this.showDeleteCodeNotice(deleteCode, creatorEmail, title, creatorSignup ? 'Je bent automatisch ingeschreven als deelnemer.' : '');
-      await this.loadEvents();
+      try {
+        await this.loadEvents();
+      } catch (error) {
+        console.error('Kon evenementen niet opnieuw laden:', error);
+      }
     } catch (error) {
       console.error('Kon evenement niet opslaan:', error);
       this.setStatus('Er ging iets mis bij het opslaan van het evenement.', true);

@@ -5,6 +5,11 @@ ALTER TABLE public.signups ENABLE ROW LEVEL SECURITY;
 -- Add a signup email column if it does not exist yet
 ALTER TABLE public.signups ADD COLUMN IF NOT EXISTS email text;
 
+-- Add creator flags for the boardgame_tables table if they do not exist yet
+ALTER TABLE public.boardgame_tables ADD COLUMN IF NOT EXISTS creator_explains boolean NOT NULL DEFAULT false;
+ALTER TABLE public.boardgame_tables ADD COLUMN IF NOT EXISTS creator_joins boolean NOT NULL DEFAULT true;
+ALTER TABLE public.boardgame_tables ADD COLUMN IF NOT EXISTS creator_name text;
+
 -- Allow anonymous users to read and create tables
 CREATE POLICY IF NOT EXISTS "boardgame_tables_select_anon"
   ON public.boardgame_tables
