@@ -198,6 +198,45 @@ main {
   border-radius: 999px;
   text-decoration: none;
   font-weight: 700;
+  border: 0;
+  cursor: pointer;
+}
+
+.button.small {
+  padding: 0.55rem 0.9rem;
+  font-size: 0.95rem;
+}
+
+.button.danger-button {
+  background: #b13d3d;
+  color: white;
+}
+
+.event-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.8rem;
+}
+
+.event-card-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: #5d5d5d;
+}
+
+.form-help {
+  margin: -0.2rem 0 0.75rem;
+  font-size: 0.95rem;
+  color: #5d5d5d;
+}
+
+.signup-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .notice {

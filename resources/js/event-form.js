@@ -2,6 +2,7 @@ class EventBoardGameManager {
   constructor() {
     this.storageKey = 'snuffel-events-v1';
     this.supabaseConfig = window.SUPABASE_CONFIG || null;
+    this.adminPassword = window.SNUFFEL_ADMIN_PASSWORD || 'snuffel-admin';
     this.form = document.getElementById('event-form');
     this.eventsList = document.getElementById('events-list');
     this.statusElement = document.getElementById('form-status');
@@ -22,6 +23,16 @@ class EventBoardGameManager {
   bindEvents() {
     if (this.form) {
       this.form.addEventListener('submit', (event) => this.handleCreateEvent(event));
+    }
+
+    if (this.eventsList) {
+      this.eventsList.addEventListener('click', (event) => {
+        const button = event.target.closest('.delete-event-button');
+        if (button) {
+          event.preventDefault();
+          this.handleDeleteEvent(button.dataset.eventId, button.dataset.eventTitle);
+        }
+      });
     }
 
     if (this.lookupButton) {
@@ -153,6 +164,8 @@ class EventBoardGameManager {
       bggId: row.bgg_id || row.bggId || '',
       thumbnail: row.thumbnail_url || row.thumbnail || '',
       description: row.description || '',
+      creatorEmail: row.creator_email || row.creatorEmail || '',
+      deleteCode: row.delete_code || row.deleteCode || '',
       signups: Array.isArray(row.signups) ? row.signups : [],
       createdAt: row.created_at || row.createdAt,
     };
@@ -167,6 +180,8 @@ class EventBoardGameManager {
       bgg_id: event.bggId,
       thumbnail_url: event.thumbnail,
       description: event.description,
+      creator_email: event.creatorEmail,
+      delete_code: event.deleteCode,
       created_at: event.createdAt,
     };
   }
@@ -243,6 +258,7 @@ class EventBoardGameManager {
 
     const formData = new FormData(this.form);
     const title = (formData.get('boardgame-name') || '').toString().trim();
+    const creatorEmail = (formData.get('creator-email') || '').toString().trim();
     const date = (formData.get('date') || '').toString().trim();
     const time = (formData.get('time') || '').toString().trim();
     const maxPlayers = Number(formData.get('max-players') || 0);
@@ -252,6 +268,12 @@ class EventBoardGameManager {
       return;
     }
 
+    if (!this.isValidEmail(creatorEmail)) {
+      this.setStatus('Vul een geldig e-mailadres in zodat we een verwijdercode kunnen bewaren.', true);
+      return;
+    }
+
+    const deleteCode = this.generateDeleteCode();
     const newEvent = {
       id: this.generateId(),
       title,
@@ -262,6 +284,8 @@ class EventBoardGameManager {
       bggId: (formData.get('bgg-id') || '').toString().trim(),
       thumbnail: (formData.get('thumbnail-url') || '').toString().trim(),
       description: (formData.get('description') || '').toString().trim(),
+      creatorEmail,
+      deleteCode,
       signups: [],
       createdAt: new Date().toISOString(),
     };
@@ -284,7 +308,7 @@ class EventBoardGameManager {
         this.bggResults.innerHTML = '';
       }
 
-      this.setStatus('Evenement is aangemaakt. Mensen kunnen zich direct inschrijven.');
+      await this.showDeleteCodeNotice(deleteCode, creatorEmail, title);
       await this.loadEvents();
     } catch (error) {
       console.error('Kon evenement niet opslaan:', error);
@@ -342,6 +366,74 @@ class EventBoardGameManager {
     }
   }
 
+  async handleDeleteEvent(eventId, eventTitle) {
+    if (!eventId) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Weet je zeker dat je tafel \"${eventTitle || 'deze tafel'}\" wilt verwijderen?`);
+    if (!confirmed) {
+      return;
+    }
+
+    const targetEvent = this.events.find((event) => event.id === eventId);
+    if (!targetEvent) {
+      this.setStatus('De tafel kon niet worden gevonden.', true);
+      return;
+    }
+
+    const enteredEmail = (window.prompt('Voer het e-mailadres in dat je bij de tafel hebt gebruikt.') || '').toString().trim();
+    const enteredCode = (window.prompt('Voer de verwijdercode in die je hebt ontvangen.') || '').toString().trim();
+
+    if (!enteredEmail || !enteredCode) {
+      this.setStatus('Vul zowel je e-mailadres als je verwijdercode in.', true);
+      return;
+    }
+
+    if (String(targetEvent.creatorEmail || '').toLowerCase() !== enteredEmail.toLowerCase()) {
+      this.setStatus('Het e-mailadres komt niet overeen met deze tafel.', true);
+      return;
+    }
+
+    if (String(targetEvent.deleteCode || '').toUpperCase() !== enteredCode.toUpperCase()) {
+      this.setStatus('De verwijdercode is onjuist.', true);
+      return;
+    }
+
+    this.setStatus('Tafel wordt verwijderd...');
+
+    try {
+      if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey) {
+        await this.deleteFromSupabase(eventId);
+      }
+
+      this.events = this.events.filter((event) => event.id !== eventId);
+      if (!this.supabaseConfig?.url || !this.supabaseConfig?.anonKey) {
+        this.saveToLocalStorage(this.events);
+      }
+
+      this.renderEvents();
+      this.setStatus('De tafel is verwijderd.');
+    } catch (error) {
+      console.error('Kon tafel niet verwijderen:', error);
+      this.setStatus('Er ging iets mis bij het verwijderen van de tafel.', true);
+    }
+  }
+
+  async deleteFromSupabase(eventId) {
+    const response = await fetch(`${this.supabaseConfig.url}/rest/v1/boardgame_tables?id=eq.${encodeURIComponent(eventId)}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: this.supabaseConfig.anonKey,
+        Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase delete HTTP ${response.status}`);
+    }
+  }
+
   renderEvents() {
     if (!this.eventsList) {
       return;
@@ -381,10 +473,14 @@ class EventBoardGameManager {
         <p><strong>Inschrijvingen:</strong> <span class="signup-count">${this.escapeHtml(badgeText)}</span></p>
         <p><strong>Vrije plaatsen:</strong> ${this.escapeHtml(String(remainingSpots))}</p>
         <p><strong>Deelnemers:</strong> ${this.escapeHtml(signupNames || 'Nog niemand')}</p>
-        <form class="signup-form" data-event-id="${this.escapeHtml(event.id)}">
-          <input type="text" name="signup-name" placeholder="Jouw naam" required />
-          <button type="submit" class="button small">Inschrijven</button>
-        </form>
+        <p class="event-card-note">Verwijderbaar met het e-mailadres en de verwijdercode die je bij het aanmaken hebt ontvangen.</p>
+        <div class="event-card-actions">
+          <form class="signup-form" data-event-id="${this.escapeHtml(event.id)}">
+            <input type="text" name="signup-name" placeholder="Jouw naam" required />
+            <button type="submit" class="button small">Inschrijven</button>
+          </form>
+          <button type="button" class="button small danger-button delete-event-button" data-event-id="${this.escapeHtml(event.id)}" data-event-title="${this.escapeHtml(event.title)}">Verwijderen</button>
+        </div>
       </article>
     `;
   }
@@ -493,6 +589,77 @@ class EventBoardGameManager {
       this.bggResults.innerHTML = '<p>Kon de details niet laden van BGG.</p>';
       this.setStatus('Kon de details niet laden van BGG.', true);
     }
+  }
+
+  async showDeleteCodeNotice(deleteCode, creatorEmail, title) {
+    const subject = `Verwijdercode voor tafel: ${title}`;
+    const body = `Hallo,\n\nJe hebt een tafel aangemaakt op De Snuffelaars.\n\nTafel: ${title}\nVerwijdercode: ${deleteCode}\n\nGebruik deze code om de tafel later zelf te verwijderen.`;
+
+    if (this.supabaseConfig?.url && this.supabaseConfig?.anonKey && creatorEmail) {
+      try {
+        const emailed = await this.sendDeleteCodeEmail({
+          to: creatorEmail,
+          title,
+          deleteCode,
+          subject,
+          body,
+        });
+
+        if (emailed) {
+          this.setStatus(`Tafel is aangemaakt. De verwijdercode is verzonden naar ${creatorEmail}.`);
+          return;
+        }
+      } catch (error) {
+        console.error('Kon de verwijdercode-e-mail niet versturen:', error);
+      }
+    }
+
+    if (creatorEmail) {
+      const mailtoSubject = encodeURIComponent(subject);
+      const mailtoBody = encodeURIComponent(body);
+      window.location.href = `mailto:${encodeURIComponent(creatorEmail)}?subject=${mailtoSubject}&body=${mailtoBody}`;
+    }
+
+    this.setStatus(`Tafel is aangemaakt. Bewaar de verwijdercode ${deleteCode}. Je kunt deze later gebruiken om de tafel zelf te verwijderen.`);
+  }
+
+  async sendDeleteCodeEmail({ to, title, deleteCode, subject, body }) {
+    if (!this.supabaseConfig?.url || !this.supabaseConfig?.anonKey) {
+      return false;
+    }
+
+    const response = await fetch(`${this.supabaseConfig.url}/functions/v1/send-table-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: this.supabaseConfig.anonKey,
+        Authorization: `Bearer ${this.supabaseConfig.anonKey}`,
+      },
+      body: JSON.stringify({
+        to,
+        title,
+        deleteCode,
+        subject,
+        body,
+        siteName: 'De Snuffelaars',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`E-mailfunctie HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return Boolean(data?.success);
+  }
+
+  generateDeleteCode() {
+    const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+    return `SNF-${randomPart}`;
+  }
+
+  isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 
   generateId() {
