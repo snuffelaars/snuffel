@@ -75,15 +75,15 @@ class EventBoardGameManager {
 
   getFallbackCalendarDates() {
     return [
-      { date: '2025-12-20', time: '19:30', location: 'De Snuffel hostel' },
-      { date: '2026-01-31', time: '19:30', location: 'De Snuffel hostel' },
-      { date: '2026-02-21', time: '19:30', location: 'De Snuffel hostel' },
-      { date: '2026-03-07', time: '19:30', location: 'De Snuffel hostel' },
-      { date: '2026-04-11', time: '19:30', location: 'De Snuffel hostel' },
-      { date: '2026-05-09', time: '19:30', location: 'De Snuffel hostel' },
-      { date: '2026-06-06', time: '19:30', location: 'De Snuffel hostel' },
-      { date: '2026-07-11', time: '19:30', location: 'De Snuffel hostel' },
-      { date: '2026-08-15', time: '19:30', location: 'De Snuffel hostel' },
+      { date: '2025-12-20', time: '19:45', location: 'De Snuffel hostel' },
+      { date: '2026-01-31', time: '19:45', location: 'De Snuffel hostel' },
+      { date: '2026-02-21', time: '19:45', location: 'De Snuffel hostel' },
+      { date: '2026-03-07', time: '19:45', location: 'De Snuffel hostel' },
+      { date: '2026-04-11', time: '19:45', location: 'De Snuffel hostel' },
+      { date: '2026-05-09', time: '19:45', location: 'De Snuffel hostel' },
+      { date: '2026-06-06', time: '19:45', location: 'De Snuffel hostel' },
+      { date: '2026-07-11', time: '19:45', location: 'De Snuffel hostel' },
+      { date: '2026-08-15', time: '19:45', location: 'De Snuffel hostel' },
     ];
   }
 
@@ -827,7 +827,7 @@ Je kunt op zoek gaan naar een andere tafel of een nieuwe tafel aanmaken.`;
         <div class="event-card-top">
           <div>
             <h3>${this.escapeHtml(event.title)}</h3>
-            <p>${this.escapeHtml(event.description || 'Geen extra beschrijving')}</p>
+            <p>${this.linkify(event.description || 'Geen extra beschrijving')}</p>
           </div>
           ${event.thumbnail ? `<img src="${this.escapeHtml(event.thumbnail)}" alt="${this.escapeHtml(event.title)}">` : ''}
         </div>
@@ -1102,6 +1102,27 @@ Je kunt op zoek gaan naar een andere tafel of een nieuwe tafel aanmaken.`;
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#39;');
+  }
+
+  linkify(text) {
+    if (!text) return '';
+    const escaped = this.escapeHtml(text);
+    // URLs starting with http(s)
+    const urlPattern = /\bhttps?:\/\/[\w\-@:%._+~#=\/\?&;,\(\)\[\]~]+/g;
+    // URLs starting with www.
+    const wwwPattern = /\bwww\.[\w\-@:%._+~#=\/\?&;,\(\)\[\]~]+/g;
+
+    const linked = escaped
+      .replace(urlPattern, (match) => {
+        const href = this.escapeHtml(match);
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(match)}</a>`;
+      })
+      .replace(wwwPattern, (match) => {
+        const href = this.escapeHtml('https://' + match);
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(match)}</a>`;
+      });
+
+    return linked;
   }
 }
 
