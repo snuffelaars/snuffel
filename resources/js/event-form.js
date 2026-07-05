@@ -248,6 +248,8 @@ class EventBoardGameManager {
       description: row.description || '',
       creatorEmail: row.creator_email || row.creatorEmail || '',
       deleteCode: row.delete_code || row.deleteCode || '',
+      canExplain: row.creator_explains ?? row.canExplain ?? true,
+      creatorJoins: row.creator_joins ?? row.creatorJoins ?? true,
       signups: Array.isArray(row.signups) ? row.signups : [],
       createdAt: row.created_at || row.createdAt,
     };
@@ -264,6 +266,8 @@ class EventBoardGameManager {
       description: event.description,
       creator_email: event.creatorEmail,
       delete_code: event.deleteCode,
+      creator_explains: event.canExplain,
+      creator_joins: event.creatorJoins,
       created_at: event.createdAt,
     };
   }
