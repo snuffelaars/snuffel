@@ -2,6 +2,8 @@ class EventBoardGameManager {
   constructor() {
     this.storageKey = 'snuffel-events-v1';
     this.supabaseConfig = window.SUPABASE_CONFIG || null;
+    this.bggApiToken = window.BGG_API_TOKEN || null;
+    this.bggProxyUrl = window.BGG_PROXY_URL || null;
     this.adminPassword = window.SNUFFEL_ADMIN_PASSWORD || 'snuffel-admin';
     this.form = document.getElementById('event-form');
     this.eventsList = document.getElementById('events-list');
@@ -644,6 +646,62 @@ class EventBoardGameManager {
     `;
   }
 
+  async fetchBggXml(endpoint, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const urls = [];
+
+    if (this.bggProxyUrl) {
+      const proxyUrl = new URL(this.bggProxyUrl, window.location.origin);
+      proxyUrl.searchParams.set('endpoint', endpoint);
+      for (const [key, value] of Object.entries(params)) {
+        proxyUrl.searchParams.set(key, value);
+      }
+      urls.push(proxyUrl.toString());
+    }
+
+    if (this.bggApiToken) {
+      urls.push(`https://boardgamegeek.com/xmlapi2/${endpoint}?${query}`);
+    }
+
+    if (urls.length === 0) {
+      throw new Error('BGG search requires a local proxy or a valid BGG API token. Set window.BGG_PROXY_URL or window.BGG_API_TOKEN.');
+    }
+
+    let lastError = null;
+
+    for (const url of urls) {
+      try {
+        const headers = {
+          Accept: 'application/xml,text/xml'
+        };
+
+        if (url.startsWith('https://boardgamegeek.com') && this.bggApiToken) {
+          headers.Authorization = `Bearer ${this.bggApiToken}`;
+        }
+
+        const response = await fetch(url, {
+          headers,
+          cache: 'no-store'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const xml = await response.text();
+        if (!xml || xml.includes('Unauthorized')) {
+          throw new Error('Unauthorized');
+        }
+
+        return xml;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error('BGG request failed');
+  }
+
   async searchBoardGame() {
     if (!this.bggSearchInput || !this.bggResults) {
       return;
@@ -659,12 +717,10 @@ class EventBoardGameManager {
     this.bggResults.innerHTML = '<p>Bezig met zoeken…</p>';
 
     try {
-      const response = await fetch(`https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame`);
-      if (!response.ok) {
-        throw new Error(`BGG HTTP ${response.status}`);
-      }
-
-      const xml = await response.text();
+      const xml = await this.fetchBggXml('search', {
+        query,
+        type: 'boardgame'
+      });
       const parser = new DOMParser();
       const document = parser.parseFromString(xml, 'application/xml');
       const items = Array.from(document.querySelectorAll('item'));
@@ -705,12 +761,10 @@ class EventBoardGameManager {
     this.bggResults.innerHTML = '<p>Details worden geladen…</p>';
 
     try {
-      const response = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${bggId}&stats=1`);
-      if (!response.ok) {
-        throw new Error(`BGG detail HTTP ${response.status}`);
-      }
-
-      const xml = await response.text();
+      const xml = await this.fetchBggXml('thing', {
+        id: bggId,
+        stats: '1'
+      });
       const parser = new DOMParser();
       const document = parser.parseFromString(xml, 'application/xml');
       const item = document.querySelector('item');
