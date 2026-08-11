@@ -1,73 +1,65 @@
 <!DOCTYPE html>
 <html lang="nl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kalender - De Snuffelaars</title>
-    <link rel="stylesheet" href="../resources/css/style.css" />
-  </head>
-  <body>
-    <nav>
-      <a href="../index.html">Home</a>
-      <a href="kalender.html">Kalender</a>
-      <a href="tafel-reserveren.html">Tafel reserveren</a>
-      <a href="bordspellenkast.html">Bordspellenkast</a>
-      <a href="over.html">Over</a>
-      <a href="contact.html">Contact</a>
-    </nav>
 
-    <header>
-      <img src="../resources/images/main-page-banner.png" alt="Banner van De Snuffelaars" />
-      <div class="hero">
-        <div>
-          <h1>Kalender</h1>
-          <p>Bekijk alle geplande spelavonden, thema’s en clubactiviteiten.</p>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalender - De Snuffelaars</title>
+  <link rel="stylesheet" href="../resources/css/style.css" />
+</head>
+
+<body>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a href="kalender.html">Kalender</a>
+    <a href="tafel-reserveren.html">Tafel reserveren</a>
+    <a href="bordspellenkast.html">Bordspellenkast</a>
+    <a href="over.html">Over</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+
+  <header>
+    <img src="../resources/images/main-page-banner.png" alt="Banner van De Snuffelaars" />
+    <div class="hero">
+      <div>
+        <h1>Kalender</h1>
+        <p>Bekijk alle geplande spelavonden, thema’s en clubactiviteiten.</p>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main>
-      <section>
-        <h2 class="section-heading">Komende spelavonden</h2>
-        <p id="today-date" class="today-date"></p>
-        <p id="next-event-timer" class="next-event-timer" aria-live="polite"></p>
-        <div class="card" id="kalender-list"></div>
-      </section>
+  <main>
+    <section>
+      <h2 class="section-heading">Komende spelavonden</h2>
+      <p id="today-date" class="today-date"></p>
+      <p id="next-event-timer" class="next-event-timer" aria-live="polite"></p>
+      <div class="card" id="kalender-list"></div>
+    </section>
 
-      <!-- <section>
+    <!-- <section>
         <h2 class="section-heading">Wat vind je hier?</h2>
         <div class="card">
           <p>Op deze pagina vind je de actuele clubkalender. In de toekomst kunnen we ook ingangen toevoegen voor speciale toernooien of BGA-sessies.</p>
         </div>
       </section> -->
 
-      <section>
-        <a class="button" href="../index.html">Terug naar home</a>
-      </section>
-    </main>
+    <section>
+      <a class="button" href="../index.html">Terug naar home</a>
+    </section>
+  </main>
 
-    <footer>&copy; 2026 De Snuffelaars - bordspelclub</footer>
-    <script id="kalender-data" type="application/json">
+  <footer>&copy; 2026 De Snuffelaars - bordspelclub</footer>
+  <script id="kalender-data" type="application/json">
 [
-  {
-    "date": "2026-06-06",
-    "time": "19:45",
-    "location": "De Snuffel hostel"
-  },
-  {
-    "date": "2026-07-11",
-    "time": "19:45",
-    "location": "De Snuffel hostel"
-  },
-  {
-    "date": "2026-07-17",
-    "time": "19:30",
-    "location": "SPECIAL: Blood on the clocktower @De Snuffel hostel"
-  },
   {
     "date": "2026-08-15",
     "time": "19:45",
     "location": "De Snuffel hostel"
+  },
+  {
+    "date": "2026-08-21",
+    "time": "19:30",
+    "location": "SPECIAL: Blood on the clocktower @De Snuffel hostel"
   },
   {
     "date": "2026-09-05",
@@ -91,6 +83,7 @@
   }
 ]
     </script>
-    <script src="../resources/js/events.js"></script>
-  </body>
+  <script src="../resources/js/events.js"></script>
+</body>
+
 </html>
