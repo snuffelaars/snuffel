@@ -43,6 +43,11 @@ class EventCalendarManager {
   }
 
   async loadEvents({ dataUrl, fallbackScriptElement }) {
+    const globalEvents = window.SNUFFEL_CALENDAR_DATA;
+    if (Array.isArray(globalEvents) && globalEvents.length > 0) {
+      return globalEvents;
+    }
+
     try {
       const response = await fetch(dataUrl);
       if (!response.ok) {
@@ -97,7 +102,7 @@ class EventCalendarManager {
     fallbackScriptElement,
     emptyMessage = 'Er is momenteel geen volgende spelavond gepland.',
     loadingMessage = 'De volgende spelavond kan momenteel niet worden geladen.',
-    timerLabel = 'Volgende spelavond in',
+    timerLabel = 'Countdown: ',
   }) {
     if (!containerElement || !timerElement) {
       return;
@@ -122,9 +127,16 @@ class EventCalendarManager {
 
       const nextEvent = upcomingEvents[0];
       const eventDateLabel = EventCalendarManager.formatEventDateLabel(nextEvent.dateTime);
+      const description = (nextEvent.description || '').trim();
+      const link = (nextEvent.link || '').trim();
+      const descriptionMarkup = description && link
+        ? `<a class="event-link" href="${link}" target="_blank" rel="noopener noreferrer">${description}</a>`
+        : '';
+
       containerElement.innerHTML = `
         <p><strong>${eventDateLabel}</strong></p>
         <p>${nextEvent.time || '19:45'} uur – ${nextEvent.location || 'De Snuffel hostel'}</p>
+        ${descriptionMarkup ? `<p>${descriptionMarkup}</p>` : ''}
       `;
 
       const updateTimer = () => {
@@ -223,10 +235,19 @@ class EventCalendarManager {
           const eventDate = EventCalendarManager.parseEventDateTime(event);
           const formattedDate = EventCalendarManager.formatEventDateLabel(eventDate);
           const location = event.location || 'De Snuffel hostel';
+          const description = (event.description || '').trim();
+          const link = (event.link || '').trim();
+          const descriptionText = description || link || '';
+          const descriptionMarkup = descriptionText
+            ? (link
+              ? `<a class="event-link" href="${link}" target="_blank" rel="noopener noreferrer">${description || link}</a>`
+              : description)
+            : '';
 
           return `
             <div class="kalender-item" data-date="${event.date}" data-time="${event.time || '19:45'}">
               <p><strong>${formattedDate}</strong> | ${event.time || '19:45'} uur – ${location}</p>
+              ${descriptionMarkup ? `<p>${descriptionMarkup}</p>` : ''}
             </div>
           `;
         })
