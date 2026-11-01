@@ -20,89 +20,16 @@
       <img src="../resources/images/main-page-banner.png" alt="Banner van De Snuffelaars" />
       <div class="hero">
         <div>
-          <h1>Tafel reserveren</h1>
-          <p>Plan hier een nieuwe spelavond en laat anderen zich inschrijven.</p>
+          <h1>Inschrijven via Ludoya</h1>
+          <p>Kies een speldatum en schrijf je in via de Ludoya-link van die specifieke avond.</p>
         </div>
       </div>
     </header>
 
     <main>
       <section>
-        <h2 class="section-heading">Nieuwe tafel aanmaken</h2>
-
-        <form id="event-form" class="event-form">
-          <div class="cards">
-            <!-- <div class="card">
-              <h3>Zoek in BGG</h3>
-              <label>
-                Bordspelnaam
-                <input id="bgg-search" type="text" placeholder="Bijvoorbeeld Catan" />
-                <button id="lookup-bgg" type="button" class="button small">Zoek in BGG</button>
-              </label>
-
-              <div id="bgg-results" class="bgg-results"></div>
-            </div> -->
-
-            <div class="card">
-              <label>
-                Bordspelnaam
-                <input id="boardgame-name" name="boardgame-name" type="text" required />
-              </label>
-
-              <label>
-                Naam van de organisator
-                <input id="creator-name" name="creator-name" type="text" placeholder="Bijvoorbeeld Jan" required />
-              </label>
-
-              <label>
-                Emailadres van de organisator
-                <input id="creator-email" name="creator-email" type="email" placeholder="voorbeeld@email.com" required />
-              </label>
-
-              <p class="form-help">We maken een unieke verwijdercode aan en bewaren deze samen met je e-mailadres. Je gebruikt die later om je tafel zelf te verwijderen.</p>
-
-              <label>
-                Datum
-                <input id="event-date" name="date" type="date" required />
-              </label>
-
-              <label>
-                Tijd
-                <input name="time" type="time" value="19:45" required />
-              </label>
-
-              <label>
-                Maximaal aantal spelers
-                <input id="max-players" name="max-players" type="number" min="1" required />
-              </label>
-
-              <label class="checkbox-label">
-                <input id="can-explain" name="can-explain" type="checkbox" checked />Ik kan het spel uitleggen
-              </label>
-              <br>
-              <label class="checkbox-label">
-                <input id="creator-joins" name="creator-joins" type="checkbox" checked />Ik doe mee
-              </label>
-
-              <input id="bgg-id" name="bgg-id" type="hidden" />
-              <input id="thumbnail-url" name="thumbnail-url" type="hidden" />
-
-              <label>
-                Extra beschrijving
-                <textarea id="description" name="description" rows="3" placeholder="Bijvoorbeeld thema, level of bijzonderheden"></textarea>
-              </label>
-
-              <button type="submit" class="button">Tafel aanmaken</button>
-            </div>
-          </div>
-        </form>
-
-        <p id="form-status" class="form-status" aria-live="polite"></p>
-      </section>
-
-      <section>
-        <h2 class="section-heading">Beschikbare tafels</h2>
-        <div id="events-list" class="events-list"></div>
+        <h2 class="section-heading">Komende spelavonden</h2>
+        <div class="card" id="kalender-list"></div>
       </section>
 
       <section>
@@ -111,12 +38,7 @@
     </main>
 
     <footer>&copy; 2026 De Snuffelaars - bordspelclub</footer>
-    <script>
-      window.BGG_PROXY_URL = 'http://localhost:3001/';
-      // If you register a BGG application and receive an API token, set it here:
-      // window.BGG_API_TOKEN = 'YOUR_BGG_TOKEN';
-    </script>
-    <script src="../resources/js/supabase-config.js"></script>
-    <script src="../resources/js/event-form.js"></script>
+    <script src="../resources/js/kalender-data.js"></script>
+    <script src="../resources/js/events.js"></script>
   </body>
 </html>

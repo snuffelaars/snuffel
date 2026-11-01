@@ -3,6 +3,13 @@ class EventCalendarManager {
     this.today = new Date();
   }
 
+  static getDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   static parseEventDateTime(event) {
     return new Date(`${event.date}T${event.time || '19:45'}:00`);
   }
@@ -111,12 +118,13 @@ class EventCalendarManager {
     let timerIntervalId = null;
     const renderNextEvent = (events) => {
       const now = new Date();
+      const today = EventCalendarManager.getDateKey(now);
       const upcomingEvents = events
         .map((event) => ({
           ...event,
           dateTime: EventCalendarManager.parseEventDateTime(event),
         }))
-        .filter((event) => event.dateTime >= now)
+        .filter((event) => event.date >= today)
         .sort((a, b) => a.dateTime - b.dateTime);
 
       if (upcomingEvents.length === 0) {
@@ -191,7 +199,8 @@ class EventCalendarManager {
 
     const updateCalendar = () => {
       const now = new Date();
-      const nextIndex = calendarItems.findIndex((item) => parseItemDateTime(item) >= now);
+      const today = EventCalendarManager.getDateKey(now);
+      const nextIndex = calendarItems.findIndex((item) => item.dataset.date >= today);
 
       calendarItems.forEach((item, index) => {
         item.classList.remove('kalender-next', 'kalender-past');
@@ -230,7 +239,15 @@ class EventCalendarManager {
         return;
       }
 
-      listElement.innerHTML = events
+      const today = EventCalendarManager.getDateKey(new Date());
+      const upcomingEvents = events
+        .filter((event) => event.date >= today)
+        .sort((a, b) => (
+          a.date.localeCompare(b.date)
+          || (a.time || '19:45').localeCompare(b.time || '19:45')
+        ));
+
+      listElement.innerHTML = upcomingEvents
         .map((event) => {
           const eventDate = EventCalendarManager.parseEventDateTime(event);
           const formattedDate = EventCalendarManager.formatEventDateLabel(eventDate);
