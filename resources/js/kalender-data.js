@@ -1,65 +1,58 @@
 window.SNUFFEL_CALENDAR_DATA = [
   {
-    date: '2026-10-30',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: 'Blood on the clocktower',
-    link: 'https://app.ludoya.com/events/spelavond-botc-2026-10-30'
+    "date": "2026-11-21",
+    "time": "19:45",
+    "location": "De Snuffel hostel",
+    "description": "Spelavond bijwonen",
+    "link": "https://app.ludoya.com/events/spelavond-2026-11-21?lang=nl"
   },
   {
-    date: '2026-11-21',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: '',
-    link: ''
+    "date": "2026-12-12",
+    "time": "19:45",
+    "location": "De Snuffel hostel",
+    "description": "Spelavond bijwonen",
+    "link": "https://app.ludoya.com/events/spelavond-december-2026-12-12?lang=nl"
   },
   {
-    date: '2026-12-12',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: '',
-    link: ''
+    "date": "2027-01-30",
+    "time": "19:45",
+    "location": "De Snuffel hostel",
+    "description": "Spelavond bijwonen",
+    "link": "https://app.ludoya.com/events/spelavond-januari-2027-01-30?lang=nl"
   },
   {
-    date: '2027-01-30',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: '',
-    link: ''
+    "date": "2027-02-20",
+    "time": "19:45",
+    "location": "De Snuffel hostel",
+    "description": "Spelavond bijwonen",
+    "link": "https://app.ludoya.com/events/spelavond-februari-2027-02-20?lang=nl"
   },
   {
-    date: '2027-02-20',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: '',
-    link: ''
+    "date": "2027-03-05",
+    "time": "19:45",
+    "location": "De Snuffel hostel",
+    "description": "Spelavond bijwonen",
+    "link": "https://app.ludoya.com/events/spelavond-maart-2027-03-05?lang=nl"
   },
   {
-    date: '2027-03-05',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: '',
-    link: ''
+    "date": "2027-04-03",
+    "time": "19:45",
+    "location": "De Snuffel hostel",
+    "description": "Spelavond bijwonen",
+    "link": "https://app.ludoya.com/events/spelavond-april-2027-04-03?lang=nl"
   },
   {
-    date: '2027-04-03',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: '',
-    link: ''
+    "date": "2027-05-22",
+    "time": "19:45",
+    "location": "De Snuffel hostel",
+    "description": "Spelavond bijwonen",
+    "link": "https://app.ludoya.com/events/spelavond-mei-2027-05-22?lang=nl"
   },
   {
-    date: '2027-05-22',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: '',
-    link: ''
-  },
-  {
-    date: '2027-06-19',
-    time: '19:45',
-    location: 'De Snuffel hostel',
-    description: '',
-    link: ''
+    "date": "2027-06-19",
+    "time": "19:45",
+    "location": "De Snuffel hostel",
+    "description": "Spelavond bijwonen",
+    "link": "https://app.ludoya.com/events/spelavond-juni-2027-06-19?lang=nl"
   }
 ];
